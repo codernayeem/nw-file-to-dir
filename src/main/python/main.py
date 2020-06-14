@@ -8,7 +8,7 @@ app = ApplicationContext()
 
 class MainWindow(QtWidgets.QMainWindow):
     ui = Ui_MainWindow()
-    
+
     app_version = app.build_settings['version']
     main_icon = app.get_resource('icon.png')
 
@@ -17,6 +17,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setWindowTitle("File to Dir")
         self.ui.setupUi(self)
         self.setIcons()
+        self.set_menu_toolbar_button_action()
     
     def setIcons(self):
         icon = QtGui.QIcon(app.get_resource('reset.png'))
@@ -33,6 +34,27 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.actionClear_1.setIcon(icon)
         self.ui.actionAdd_Multiple_Folder.setIcon(QtGui.QIcon(app.get_resource('add.png')))
         self.ui.actionAbout_the_Author.setIcon(QtGui.QIcon(self.main_icon))
+
+
+    def set_menu_toolbar_button_action(self):
+        # menu
+        # self.ui.actionAbout_the_Author.triggered.connect(self.see_about)
+        self.ui.actionExit_1.triggered.connect(lambda: sys.exit(0))
+        # self.ui.actionAdd_1.triggered.connect(self.select_folder)
+        # self.ui.actionAdd_Multiple_Folder.triggered.connect(lambda: self.select_folder(multiple=True))
+        # self.ui.actionClear.triggered.connect(self.clear_all_folders)
+        # self.ui.actionReset.triggered.connect(self.reset_all)
+
+        # toolbar
+        # self.ui.actionAdd.triggered.connect(self.select_folder)
+        # self.ui.actionClear.triggered.connect(self.clear_all_folders)
+        # self.ui.actionReset.triggered.connect(self.reset_all)
+        self.ui.actionExit.triggered.connect(sys.exit)
+
+        # button
+        # self.ui.output_bt.clicked.connect(self.select_output_folder)
+        # self.ui.bt_go.clicked.connect(self.go_for_work)
+
 
 if __name__ == '__main__':
     mainWindow = MainWindow()
