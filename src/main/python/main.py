@@ -7,6 +7,24 @@ import sys, os
 
 app = ApplicationContext()
 
+
+class CustomLabel(QtWidgets.QLabel):
+    def __init__(self, parent, main):
+        super(QtWidgets.QLabel, self).__init__(parent)
+        self.setAcceptDrops(True)
+        self.Root = main
+        
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
+            
+    def dropEvent(self, event):
+        if event.mimeData().hasUrls():
+            self.Root.select_folder(drag=True, folders=[i.toLocalFile() for i in event.mimeData().urls()])
+
+
 class MainWindow(QtWidgets.QMainWindow):
     ui = Ui_MainWindow()
     FILEDATA = FileData()
@@ -18,9 +36,11 @@ class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
         self.setWindowTitle("File to Dir")
-        self.ui.setupUi(self)
+        self.ui.setupUi(self, CustomLabel)
         self.setIcons()
         self.set_menu_toolbar_button_action()
+        self.clear_all_folders()
+
     
     def setIcons(self):
         icon = QtGui.QIcon(app.get_resource('reset.png'))

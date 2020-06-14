@@ -118,6 +118,6 @@ class FileData:
     def get_status_txt(self):
         c = len(self.selected_folders)
         if c == 0:
-            return "<big>No <b>Folder</b> is selected</big>"
+            return "<big>No <b>Folder</b> is selected</big><br>Drag your folders here"
         else:
             return f"<b>{c} Folder{check_plural(c)}</b> are selected"
