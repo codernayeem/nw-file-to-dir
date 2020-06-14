@@ -74,7 +74,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.actionExit.triggered.connect(sys.exit)
 
         # button
-        # self.ui.output_bt.clicked.connect(self.select_output_folder)
+        self.ui.output_bt.clicked.connect(self.select_output_folder)
         # self.ui.bt_go.clicked.connect(self.go_for_work)
 
     def select_folder(self, multiple=False, drag=False, folders=None):
@@ -105,6 +105,13 @@ class MainWindow(QtWidgets.QMainWindow):
     def clear_all_folders(self):
         self.FILEDATA.reset()
         self.ui.txt_stat.setText(self.FILEDATA.get_status_txt())
+
+    def select_output_folder(self):
+        folder = str(QtWidgets.QFileDialog.getExistingDirectory(self, "Select Output Directory", directory=self.last_selected_out_dir))
+        if folder != '':
+            folder = str(Path(folder))
+            self.last_selected_out_dir = join(*folder.split('\\')[:len(folder.split('\\'))-1])
+            self.ui.input_2.setText(folder)
 
     def reset_all(self):
         self.last_selected_dir = 'C:'
