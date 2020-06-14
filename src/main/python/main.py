@@ -31,7 +31,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     app_version = app.build_settings['version']
     main_icon = app.get_resource('icon.png')
-    last_selected_dir = 'C:'
 
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
@@ -39,8 +38,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.setupUi(self, CustomLabel)
         self.setIcons()
         self.set_menu_toolbar_button_action()
-        self.clear_all_folders()
-
+        self.reset_all()
     
     def setIcons(self):
         icon = QtGui.QIcon(app.get_resource('reset.png'))
@@ -65,12 +63,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.actionAdd_1.triggered.connect(self.select_folder)
         self.ui.actionAdd_Multiple_Folder.triggered.connect(lambda: self.select_folder(multiple=True))
         self.ui.actionClear.triggered.connect(self.clear_all_folders)
-        # self.ui.actionReset.triggered.connect(self.reset_all)
+        self.ui.actionReset.triggered.connect(self.reset_all)
 
         # toolbar
         self.ui.actionAdd.triggered.connect(self.select_folder)
         self.ui.actionClear.triggered.connect(self.clear_all_folders)
-        # self.ui.actionReset.triggered.connect(self.reset_all)
+        self.ui.actionReset.triggered.connect(self.reset_all)
         self.ui.actionExit.triggered.connect(sys.exit)
 
         # button
@@ -106,6 +104,24 @@ class MainWindow(QtWidgets.QMainWindow):
         self.FILEDATA.reset()
         self.ui.txt_stat.setText(self.FILEDATA.get_status_txt())
 
+    def reset_all(self):
+        self.last_selected_dir = 'C:'
+        self.last_selected_out_dir = 'C:'
+        self.ui.side_input_2.setChecked(False)
+        self.ui.side_input_3.setChecked(False)
+        self.ui.side_input_4.setText('')
+        self.ui.side_input_5.setText('')
+        self.ui.side_input_6.setText('')
+        self.ui.side_input_7.setText('')
+        self.ui.side_input_8.setChecked(False)
+        self.ui.side_input_9.setChecked(False)
+        self.ui.side_input_10.setText('')
+        self.ui.side_input_11.setText('')
+        self.ui.side_input_12.setText('')
+        self.ui.side_input_13.setText('')
+        self.ui.input_1.setCurrentIndex(0)
+        self.ui.input_2.setText('')
+        self.clear_all_folders()
 
 if __name__ == '__main__':
     mainWindow = MainWindow()
