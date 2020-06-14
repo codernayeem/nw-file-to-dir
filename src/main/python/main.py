@@ -2,6 +2,7 @@ from fbs_runtime.application_context.PyQt5 import ApplicationContext
 from PyQt5 import QtGui, QtWidgets, QtCore
 from main_ui import Ui_MainWindow
 from tools import FileData, join, Path, is_valid_dir
+from dialogs import Ui_AboutPage
 
 import sys, os
 
@@ -28,6 +29,7 @@ class CustomLabel(QtWidgets.QLabel):
 class MainWindow(QtWidgets.QMainWindow):
     ui = Ui_MainWindow()
     FILEDATA = FileData()
+    about_page = None
 
     app_version = app.build_settings['version']
     main_icon = app.get_resource('icon.png')
@@ -58,7 +60,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def set_menu_toolbar_button_action(self):
         # menu
-        # self.ui.actionAbout_the_Author.triggered.connect(self.see_about)
+        self.ui.actionAbout_the_Author.triggered.connect(self.see_about)
         self.ui.actionExit_1.triggered.connect(lambda: sys.exit(0))
         self.ui.actionAdd_1.triggered.connect(self.select_folder)
         self.ui.actionAdd_Multiple_Folder.triggered.connect(lambda: self.select_folder(multiple=True))
@@ -122,6 +124,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.input_1.setCurrentIndex(0)
         self.ui.input_2.setText('')
         self.clear_all_folders()
+
+    def see_about(self):
+        if self.about_page is None:
+            self.about_page = QtWidgets.QWidget()
+            self.about_page.ui = Ui_AboutPage()
+            self.about_page.ui.setupUi(self.about_page)
+            self.about_page.ui.version.setText(f'v{self.app_version}')
+            self.about_page.ui.icon.setPixmap(QtGui.QPixmap(self.main_icon))
+            self.about_page.ui.name.setText("File To Dir")
+        self.about_page.destroy()
+        self.about_page.show()
 
 if __name__ == '__main__':
     mainWindow = MainWindow()
