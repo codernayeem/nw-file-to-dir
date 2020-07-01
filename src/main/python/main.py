@@ -1,13 +1,49 @@
 from fbs_runtime.application_context.PyQt5 import ApplicationContext
 from PyQt5 import QtGui, QtWidgets, QtCore
+from PyQt5.QtCore import QThread, pyqtSignal
 from main_ui import Ui_MainWindow
 from dialogs import Ui_AboutPage
 from tools import FileData, is_valid_dir, join, Path, get_filename_extension, get_files
 from shutil import copyfile, move
+from action_dialog import Ui_Action
 
 import sys, os
 
 app = ApplicationContext()
+
+
+class actionThread(QThread):
+    updateSignal = pyqtSignal(int, int, int, int)
+    startActionSignal = pyqtSignal(str, str)
+
+    def __init__(self, main):
+        QThread.__init__(self)
+        self.main = main
+
+    def run(self):
+        done = 0
+        fail = 0
+        not_allowed = 0
+        ignored = 0
+
+        for folder in self.main.action_dialog.data_folders:
+            for a_file in get_files(folder):
+                self.startActionSignal.emit(folder, a_file)
+                status = self.main.check_for_allow_and_ignore(a_file, self.main.action_dialog.data_data)
+                if status == 1:
+                    ignored += 1
+                elif status == 2:
+                    not_allowed += 1
+                else:
+                    try:
+                        if self.main.action_dialog.data_action == 0:
+                            copyfile(join(folder, a_file), join(self.main.action_dialog.data_des, a_file))
+                        else:
+                            move(join(folder, a_file), join(self.main.action_dialog.data_des, a_file))
+                        done += 1
+                    except:
+                        fail += 1
+                self.updateSignal.emit(done, fail, not_allowed, ignored)
 
 
 class CustomLabel(QtWidgets.QLabel):
@@ -31,6 +67,7 @@ class MainWindow(QtWidgets.QMainWindow):
     ui = Ui_MainWindow()
     FILEDATA = FileData()
     about_page = None
+    action_dialog = None
 
     app_version = app.build_settings['version']
     main_icon = app.get_resource('icon.png')
@@ -76,7 +113,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # button
         self.ui.output_bt.clicked.connect(self.select_output_folder)
-        self.ui.bt_go.clicked.connect(self.go_for_work)
+        self.ui.bt_go.clicked.connect(self.start_action_dialog)
 
     def select_folder(self, multiple=False, drag=False, folders=None):
         if multiple:
@@ -145,67 +182,18 @@ class MainWindow(QtWidgets.QMainWindow):
         self.about_page.show()
 
     def go_for_work(self):
-        i1 = self.ui.input_1.currentIndex()
-        i2 = self.ui.input_2.text()
-        include_subfolder = self.ui.side_input_1.isChecked()
-        if i2.strip() == '':
-            return QtWidgets.QMessageBox.warning(self, "Warning", f"<p style=\"font-size: 10pt;\"><b>Error Found.</b> Please, give Output Directory.</p>")
-        i2 = Path(i2)
-        if not (i2.exists() and i2.is_dir()):
-            return QtWidgets.QMessageBox.warning(self, "Warning", f"<p style=\"font-size: 10pt;\"><b>Error Found.</b> Output Directory not exist.</p>")
+        self.action_dialog.ui.pushButton_start.setEnabled(False)
+        self.action_dialog.ui.pushButton_cancel.setEnabled(False)
+        self.action_dialog.ui.pushButton_finish.setEnabled(False)
+        
+        self.action_dialog.ui.stackedWidget.setCurrentIndex(0)
 
-        folders = self.FILEDATA.get_all_folders(include_subfolder)
-
-        data = {
-            's2': self.ui.side_input_2.isChecked(),
-            's3': self.ui.side_input_3.isChecked(),
-            's4': self.ui.side_input_4.text(),
-            's5': self.ui.side_input_5.text(),
-            's6': self.ui.side_input_6.text(),
-            's7': self.ui.side_input_7.text(),
-            's8': self.ui.side_input_8.isChecked(),
-            's9': self.ui.side_input_9.isChecked(),
-            's10': self.ui.side_input_10.text(),
-            's11': self.ui.side_input_11.text(),
-            's12': self.ui.side_input_12.text(),
-            's13': self.ui.side_input_13.text(),
-        }
-
-        done = 0
-        fail = 0
-        ignored = 0
-        not_allowed = 0
-
-        for folder in folders:
-            for a_file in get_files(folder):
-                status = self.check_for_allow_and_ignore(a_file, data)
-                if status == 1:
-                    ignored += 1
-                elif status == 2:
-                    not_allowed += 1
-                else:
-                    try:
-                        if i1 == 0:
-                            copyfile(join(folder, a_file), join(i2, a_file))
-                        else:
-                            move(join(folder, a_file), join(i2, a_file))
-                        done += 1
-                    except:
-                        fail += 1
-
-        info = f"<p style=\"font-size: 10pt;\"><b>Finished.</b> {done} files "
-        if i1 == 0:
-            info += 'copied'
-        else:
-            info += 'moved'
-        if fail:
-            info += f" | {fail} files failed"
-        if ignored:
-            info += f" | {ignored} files ignored"
-        if not_allowed:
-            info += f" | {not_allowed} files not allowed"
-        info += '.'
-        QtWidgets.QMessageBox.warning(self, "Info", info)
+        self.thread = actionThread(self)
+        self.thread.finished.connect(self.on_action_finish)
+        self.thread.updateSignal.connect(self.on_action_update)
+        self.thread.startActionSignal.connect(self.on_action_update_2)
+        
+        self.thread.start()
 
     def check_for_allow_and_ignore(self, fl_name, data):
         filename, ext = get_filename_extension(fl_name)
@@ -247,6 +235,91 @@ class MainWindow(QtWidgets.QMainWindow):
             if not add_item:
                 return 2
         return 0
+
+    def start_action_dialog(self):
+        i1 = self.ui.input_1.currentIndex()
+        i2 = self.ui.input_2.text()
+        include_subfolder = self.ui.side_input_1.isChecked()
+        if i2.strip() == '':
+            return QtWidgets.QMessageBox.warning(self, "Warning", f"<p style=\"font-size: 10pt;\"><b>Error Found.</b> Please, give Output Directory.</p>")
+        i2 = Path(i2)
+        if not (i2.exists() and i2.is_dir()):
+            return QtWidgets.QMessageBox.warning(self, "Warning", f"<p style=\"font-size: 10pt;\"><b>Error Found.</b> Output Directory not exist.</p>")
+        i2 = str(i2)
+        
+        folders = self.FILEDATA.get_all_folders(include_subfolder)
+
+        data = {
+            's2': self.ui.side_input_2.isChecked(),
+            's3': self.ui.side_input_3.isChecked(),
+            's4': self.ui.side_input_4.text(),
+            's5': self.ui.side_input_5.text(),
+            's6': self.ui.side_input_6.text(),
+            's7': self.ui.side_input_7.text(),
+            's8': self.ui.side_input_8.isChecked(),
+            's9': self.ui.side_input_9.isChecked(),
+            's10': self.ui.side_input_10.text(),
+            's11': self.ui.side_input_11.text(),
+            's12': self.ui.side_input_12.text(),
+            's13': self.ui.side_input_13.text(),
+        }
+
+        if self.action_dialog == None:
+            self.action_dialog = QtWidgets.QWidget()
+            self.action_dialog.setWindowTitle("Action")
+            self.action_dialog.ui = Ui_Action()
+            self.action_dialog.ui.setupUi(self.action_dialog)
+            self.action_dialog.ui.pushButton_start.clicked.connect(self.go_for_work)
+            self.action_dialog.ui.pushButton_cancel.clicked.connect(self.action_dialog.close)
+            self.action_dialog.ui.pushButton_finish.clicked.connect(self.action_dialog.close)
+        
+        self.action_dialog.ui.pushButton_start.setEnabled(True)
+        self.action_dialog.ui.pushButton_cancel.setEnabled(True)
+        self.action_dialog.ui.pushButton_finish.setEnabled(False)
+
+        self.action_dialog.ui.label_desDir.setText(i2)
+        action = 'Copying'
+        action_ = 'Copied'
+        if i1 == 1:
+            action = 'Moving'
+            action_ = 'Moved'
+        self.action_dialog.ui.label_11.setText(action)
+        self.action_dialog.ui.stackedWidget.setCurrentIndex(1)
+        self.action_dialog.ui.label_statBar.setText("""<html><body><p align="center"><span style="font-size:18pt;">Click start to go</span></p></body></html>""")
+        self.action_dialog.ui.label_11.setText(action)
+        self.action_dialog.ui.label_1.setText(action_)
+
+        self.action_dialog.ui.label_done.setText("0")
+        self.action_dialog.ui.label_failed.setText("0")
+        self.action_dialog.ui.label_notAllowed.setText("0")
+        self.action_dialog.ui.label_ignored.setText("0")
+
+        self.action_dialog.data_data = data
+        self.action_dialog.data_folders = folders
+        self.action_dialog.data_action = i1
+        self.action_dialog.data_des = i2
+
+        self.action_dialog.destroy()
+        self.action_dialog.show()
+
+    def on_action_update(self, done, fail, not_allowed, ignored):
+        self.action_dialog.ui.label_done.setText(str(done))
+        self.action_dialog.ui.label_failed.setText(str(fail))
+        self.action_dialog.ui.label_notAllowed.setText(str(not_allowed))
+        self.action_dialog.ui.label_ignored.setText(str(ignored))
+
+    def on_action_finish(self):
+        self.action_dialog.ui.pushButton_start.setEnabled(False)
+        self.action_dialog.ui.pushButton_cancel.setEnabled(False)
+        self.action_dialog.ui.pushButton_finish.setEnabled(True)
+
+        self.action_dialog.ui.stackedWidget.setCurrentIndex(1)
+
+        self.action_dialog.ui.label_statBar.setText("""<html><body><p align="center"><span style="font-size:18pt;">Finished</span></p></body></html>""")
+    
+    def on_action_update_2(self, folder, file):
+        self.action_dialog.ui.label_fromDir.setText(folder)
+        self.action_dialog.ui.label_file.setText(file)
 
 
 if __name__ == '__main__':
