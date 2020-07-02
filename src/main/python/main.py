@@ -1,23 +1,22 @@
 from fbs_runtime.application_context.PyQt5 import ApplicationContext
 from PyQt5 import QtGui, QtWidgets, QtCore
-from PyQt5.QtCore import QThread, pyqtSignal
 from main_ui import Ui_MainWindow
 from dialogs import Ui_AboutPage
 from tools import FileData, is_valid_dir, join, Path, get_filename_extension, get_files
 from shutil import copyfile, move
-from action_dialog import Ui_Action
+from action_dialog import Ui_ActionDialog
 
 import sys, os
 
 app = ApplicationContext()
 
 
-class actionThread(QThread):
-    updateSignal = pyqtSignal(int, int, int, int)
-    startActionSignal = pyqtSignal(str, str)
+class actionThread(QtCore.QThread):
+    updateSignal = QtCore.pyqtSignal(int, int, int, int)
+    startActionSignal = QtCore.pyqtSignal(str, str)
 
     def __init__(self, main):
-        QThread.__init__(self)
+        QtCore.QThread.__init__(self)
         self.main = main
 
     def run(self):
@@ -267,7 +266,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.action_dialog == None:
             self.action_dialog = QtWidgets.QWidget()
             self.action_dialog.setWindowTitle("Action")
-            self.action_dialog.ui = Ui_Action()
+            self.action_dialog.ui = Ui_ActionDialog()
             self.action_dialog.ui.setupUi(self.action_dialog)
             self.action_dialog.ui.pushButton_start.clicked.connect(self.go_for_work)
             self.action_dialog.ui.pushButton_cancel.clicked.connect(self.action_dialog.close)
@@ -278,17 +277,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.action_dialog.ui.pushButton_finish.setEnabled(False)
 
         self.action_dialog.ui.label_desDir.setText(i2)
-        action = 'Copying'
+        action = 'Copying :'
         action_ = 'Copied'
         if i1 == 1:
-            action = 'Moving'
+            action = 'Moving :'
             action_ = 'Moved'
-        self.action_dialog.ui.label_11.setText(action)
+        self.action_dialog.ui.label_action_going.setText(action)
+        self.action_dialog.ui.label_action.setText(action_)
         self.action_dialog.ui.stackedWidget.setCurrentIndex(1)
-        self.action_dialog.ui.label_statBar.setText("""<html><body><p align="center"><span style="font-size:18pt;">Click start to go</span></p></body></html>""")
-        self.action_dialog.ui.label_11.setText(action)
-        self.action_dialog.ui.label_1.setText(action_)
-
+        self.action_dialog.ui.label_statBar.setText("""<html><body><p align="center"><span style="font-size:18pt;">Click 'Start' to go</span></p></body></html>""")
+        
         self.action_dialog.ui.label_done.setText("0")
         self.action_dialog.ui.label_failed.setText("0")
         self.action_dialog.ui.label_notAllowed.setText("0")
