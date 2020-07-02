@@ -2,7 +2,7 @@ from fbs_runtime.application_context.PyQt5 import ApplicationContext
 from PyQt5 import QtGui, QtWidgets, QtCore
 from main_ui import Ui_MainWindow
 from dialogs import Ui_AboutPage
-from tools import FileData, is_valid_dir, join, Path, get_filename_extension, get_files, get_prefferd_text
+from tools import FileData, is_valid_dir, join, Path, get_filename_extension, get_files, get_prefferd_text, get_file_count
 from shutil import copyfile, move
 from action_dialog import Ui_ActionDialog
 
@@ -230,6 +230,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.action_dialog.ui.pushButton_finish.setEnabled(False)
         
         self.action_dialog.ui.stackedWidget.setCurrentIndex(0)
+        
+        self.action_dialog.ui.progressBar.setMaximum(get_file_count(self.action_dialog.data_folders) or 1)
 
         self.thread = actionThread(self.action_dialog.data_action, self.action_dialog.data_folders, self.action_dialog.data_data, self.action_dialog.data_des)
         self.thread.finished.connect(self.on_action_finish)
@@ -273,6 +275,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.action_dialog.ui.setupUi(self.action_dialog)
             self.action_dialog.setFixedHeight(223)
             self.action_dialog.setFixedWidth(515)
+            self.action_dialog.ui.progressBar.setMinimum(0)
             self.action_dialog.ui.pushButton_start.clicked.connect(self.go_for_work)
             self.action_dialog.ui.pushButton_cancel.clicked.connect(self.action_dialog.close)
             self.action_dialog.ui.pushButton_finish.clicked.connect(self.action_dialog.close)
@@ -297,10 +300,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.action_dialog.ui.label_notAllowed.setText("0")
         self.action_dialog.ui.label_ignored.setText("0")
 
+        self.action_dialog.ui.progressBar.setValue(0)
+
         self.action_dialog.data_data = data
         self.action_dialog.data_folders = folders
         self.action_dialog.data_action = i1
         self.action_dialog.data_des = i2
+        self.action_dialog.action_done = 0
 
         self.action_dialog.destroy()
         self.action_dialog.show()
@@ -311,10 +317,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.action_dialog.ui.label_notAllowed.setText(str(not_allowed))
         self.action_dialog.ui.label_ignored.setText(str(ignored))
 
+        self.action_dialog.action_done += 1
+        self.action_dialog.ui.progressBar.setValue(self.action_dialog.action_done)
+
     def on_action_finish(self):
         self.action_dialog.ui.pushButton_start.setEnabled(False)
         self.action_dialog.ui.pushButton_cancel.setEnabled(False)
         self.action_dialog.ui.pushButton_finish.setEnabled(True)
+
+        self.action_dialog.ui.progressBar.setMaximum(100)
+        self.action_dialog.ui.progressBar.setValue(100)
 
         self.action_dialog.ui.stackedWidget.setCurrentIndex(1)
 

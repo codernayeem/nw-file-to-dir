@@ -1,6 +1,6 @@
 from pathlib import Path
 from os.path import join, isfile, isdir, getsize, getctime, getmtime
-from os import listdir, rename
+from os import listdir, rename, walk
 import time, json
 from datetime import datetime
 
@@ -60,6 +60,14 @@ def check_plural(c):
     if c > 1:
         return 's'
     return ''
+
+def get_file_count(folders):
+    total = 0
+    for i in folders:
+        for ii in listdir(i):
+            if isfile(join(i, ii)):
+                total += 1
+    return total
 
 def get_prefferd_text(text):
     if len(text) > 51:
