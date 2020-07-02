@@ -61,6 +61,11 @@ def check_plural(c):
         return 's'
     return ''
 
+def get_prefferd_text(text):
+    if len(text) > 51:
+        return text[:47] + '.....'
+    return text
+
 def is_valid_filename(s):
     if s is not None:
         s = str(s)

@@ -2,7 +2,7 @@ from fbs_runtime.application_context.PyQt5 import ApplicationContext
 from PyQt5 import QtGui, QtWidgets, QtCore
 from main_ui import Ui_MainWindow
 from dialogs import Ui_AboutPage
-from tools import FileData, is_valid_dir, join, Path, get_filename_extension, get_files
+from tools import FileData, is_valid_dir, join, Path, get_filename_extension, get_files, get_prefferd_text
 from shutil import copyfile, move
 from action_dialog import Ui_ActionDialog
 
@@ -271,6 +271,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.action_dialog.setWindowTitle("Action")
             self.action_dialog.ui = Ui_ActionDialog()
             self.action_dialog.ui.setupUi(self.action_dialog)
+            self.action_dialog.setFixedHeight(220)
+            self.action_dialog.setFixedWidth(515)
             self.action_dialog.ui.pushButton_start.clicked.connect(self.go_for_work)
             self.action_dialog.ui.pushButton_cancel.clicked.connect(self.action_dialog.close)
             self.action_dialog.ui.pushButton_finish.clicked.connect(self.action_dialog.close)
@@ -279,7 +281,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.action_dialog.ui.pushButton_cancel.setEnabled(True)
         self.action_dialog.ui.pushButton_finish.setEnabled(False)
 
-        self.action_dialog.ui.label_desDir.setText(i2)
+        self.action_dialog.ui.label_desDir.setText(get_prefferd_text(i2))
         action = 'Copying :'
         action_ = 'Copied'
         if i1 == 1:
@@ -319,8 +321,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.action_dialog.ui.label_statBar.setText("""<html><body><p align="center"><span style="font-size:18pt;">Finished</span></p></body></html>""")
     
     def on_action_update_2(self, folder, file):
-        self.action_dialog.ui.label_fromDir.setText(folder)
-        self.action_dialog.ui.label_file.setText(file)
+        self.action_dialog.ui.label_fromDir.setText(get_prefferd_text(folder))
+        self.action_dialog.ui.label_file.setText(get_prefferd_text(file))
 
 
 if __name__ == '__main__':
