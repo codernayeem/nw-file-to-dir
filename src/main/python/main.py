@@ -15,9 +15,12 @@ class actionThread(QtCore.QThread):
     updateSignal = QtCore.pyqtSignal(int, int, int, int)
     startActionSignal = QtCore.pyqtSignal(str, str)
 
-    def __init__(self, main):
+    def __init__(self, action, folders, data, destination):
         QtCore.QThread.__init__(self)
-        self.main = main
+        self.action = action
+        self.folders = folders
+        self.data = data
+        self.des = destination
 
     def run(self):
         done = 0
@@ -25,24 +28,65 @@ class actionThread(QtCore.QThread):
         not_allowed = 0
         ignored = 0
 
-        for folder in self.main.action_dialog.data_folders:
+        for folder in self.folders:
             for a_file in get_files(folder):
                 self.startActionSignal.emit(folder, a_file)
-                status = self.main.check_for_allow_and_ignore(a_file, self.main.action_dialog.data_data)
+                status = self.check_for_allow_and_ignore(a_file)
                 if status == 1:
                     ignored += 1
                 elif status == 2:
                     not_allowed += 1
                 else:
                     try:
-                        if self.main.action_dialog.data_action == 0:
-                            copyfile(join(folder, a_file), join(self.main.action_dialog.data_des, a_file))
+                        if self.action == 0:
+                            copyfile(join(folder, a_file), join(self.des, a_file))
                         else:
-                            move(join(folder, a_file), join(self.main.action_dialog.data_des, a_file))
+                            move(join(folder, a_file), join(self.des, a_file))
                         done += 1
                     except:
                         fail += 1
                 self.updateSignal.emit(done, fail, not_allowed, ignored)
+
+    def check_for_allow_and_ignore(self, fl_name):
+        filename, ext = get_filename_extension(fl_name)
+        if self.data['s8']:
+            if (self.data['s9'] and not ext) or (self.data['s10'] and ext in self.data['s10']):
+                return 1
+            if self.data['s11']:
+                for i in self.data['s11']:
+                    if filename.startswith(i):
+                        return 1
+            if self.data['s12']:
+                for i in self.data['s12']:
+                    if filename.endswith(i):
+                        return 1
+            if self.data['s13']:
+                for i in self.data['s13']:
+                    if i in filename:
+                        return 1
+
+        if self.data['s2']:
+            add_item = False
+            if (self.data['s3'] and not ext) or (self.data['s4'] and ext in self.data['s4']):
+                add_item = True
+            elif self.data['s5']:
+                for i in self.data['s5']:
+                    if filename.startswith(i):
+                        add_item = True
+                        break
+            elif self.data['s6']:
+                for i in self.data['s6']:
+                    if filename.endswith(i):
+                        add_item = True
+                        break
+            elif self.data['s7']:
+                for i in self.data['s7']:
+                    if i in filename:
+                        add_item = True
+                        break
+            if not add_item:
+                return 2
+        return 0
 
 
 class CustomLabel(QtWidgets.QLabel):
@@ -187,53 +231,12 @@ class MainWindow(QtWidgets.QMainWindow):
         
         self.action_dialog.ui.stackedWidget.setCurrentIndex(0)
 
-        self.thread = actionThread(self)
+        self.thread = actionThread(self.action_dialog.data_action, self.action_dialog.data_folders, self.action_dialog.data_data, self.action_dialog.data_des)
         self.thread.finished.connect(self.on_action_finish)
         self.thread.updateSignal.connect(self.on_action_update)
         self.thread.startActionSignal.connect(self.on_action_update_2)
         
         self.thread.start()
-
-    def check_for_allow_and_ignore(self, fl_name, data):
-        filename, ext = get_filename_extension(fl_name)
-        if data['s8']:
-            if (data['s9'] and not ext) or (data['s10'] and ext in data['s10']):
-                return 1
-            if data['s11']:
-                for i in data['s11']:
-                    if filename.startswith(i):
-                        return 1
-            if data['s12']:
-                for i in data['s12']:
-                    if filename.endswith(i):
-                        return 1
-            if data['s13']:
-                for i in data['s13']:
-                    if i in filename:
-                        return 1
-
-        if data['s2']:
-            add_item = False
-            if (data['s3'] and not ext) or (data['s4'] and ext in data['s4']):
-                add_item = True
-            elif data['s5']:
-                for i in data['s5']:
-                    if filename.startswith(i):
-                        add_item = True
-                        break
-            elif data['s6']:
-                for i in data['s6']:
-                    if filename.endswith(i):
-                        add_item = True
-                        break
-            elif data['s7']:
-                for i in data['s7']:
-                    if i in filename:
-                        add_item = True
-                        break
-            if not add_item:
-                return 2
-        return 0
 
     def start_action_dialog(self):
         i1 = self.ui.input_1.currentIndex()
