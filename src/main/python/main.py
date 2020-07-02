@@ -271,7 +271,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.action_dialog.setWindowTitle("Action")
             self.action_dialog.ui = Ui_ActionDialog()
             self.action_dialog.ui.setupUi(self.action_dialog)
-            self.action_dialog.setFixedHeight(220)
+            self.action_dialog.setFixedHeight(223)
             self.action_dialog.setFixedWidth(515)
             self.action_dialog.ui.pushButton_start.clicked.connect(self.go_for_work)
             self.action_dialog.ui.pushButton_cancel.clicked.connect(self.action_dialog.close)
